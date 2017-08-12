@@ -9,12 +9,14 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,7 +29,17 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.List;
 import java.util.Locale;
 
@@ -35,14 +47,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     public GoogleMap mMap; //maybe make this public?
 
+    public JSONObject data = null;
+
+
+    public double latJSON;
+    public double lonJSON;
+
     LocationManager locationManager;
     LocationListener locationListener;
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        if(requestCode==1) {
+        if (requestCode == 1) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                     locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
@@ -54,7 +73,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    public void updateLocationInfo(Location location){ //this is all new and has to do with updating the TextViews
+    public void updateLocationInfo(Location location) { //this is all new and has to do with updating the TextViews
 
         TextView latitudeTextView = findViewById(R.id.latitudeTextView);
         TextView longitudeTextView = findViewById(R.id.longitudeTextView);
@@ -66,55 +85,209 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         altitudeTextView.setText("Altitude: " + location.getAltitude());
         accuracyTextView.setText("Accuracy: " + location.getAccuracy());
 
+        String latJSON = String.valueOf(location.getLatitude());
+        String lonJSON = String.valueOf(location.getLongitude());
+        getJSON(latJSON, lonJSON);
+
         Geocoder geocoder = new Geocoder(getApplicationContext(), Locale.getDefault());
         try {
             String address = "Could not find address";
             List<Address> listAddresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-            if(listAddresses!=null && listAddresses.size()>0){
-                address="";
-                if(listAddresses.get(0).getSubThoroughfare()!=null){
+            if (listAddresses != null && listAddresses.size() > 0) {
+                address = "";
+                if (listAddresses.get(0).getSubThoroughfare() != null) {
                     address += listAddresses.get(0).getSubThoroughfare() + " ";
                 }
-                if(listAddresses.get(0).getThoroughfare()!=null){
+                if (listAddresses.get(0).getThoroughfare() != null) {
                     address += listAddresses.get(0).getThoroughfare() + "\n";
                 }
-                if(listAddresses.get(0).getLocality()!=null){
+                if (listAddresses.get(0).getLocality() != null) {
                     address += listAddresses.get(0).getLocality() + "\n";
+                    //getJSON(listAddresses.get(0).getLocality());  //getJSON("Durham"); // THIS WORKS!!!!!!!!!!
                 }
-                if(listAddresses.get(0).getPostalCode()!=null){
+                if (listAddresses.get(0).getPostalCode() != null) {
                     address += listAddresses.get(0).getPostalCode() + "\n";
+                    //getJSON(listAddresses.get(0).getPostalCode());  //getJSON("Durham"); // THIS WORKS!!!!!!!!!!
                 }
-                if(listAddresses.get(0).getCountryName()!=null){
+                if (listAddresses.get(0).getCountryName() != null) {
                     address += listAddresses.get(0).getCountryName() + "\n";
                 }
             }
             TextView addressTextView = (TextView) findViewById(R.id.addressTextView);
             addressTextView.setText(address);
-        }catch(IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {  //Location location
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+//        //openweathermap.org api data
+//        DownloadTask task = new DownloadTask();
+//        //https://stackoverflow.com/questions/34321728/using-openweathermap-api-key
+//        //task.execute("http://api.openweathermap.org/data/2.5/weather?lat="+location.getLatitude()+"&lon="+location.getLongitude()+"&APPID=285d3b277a04868e1db63531a4832c78");
+//        task.execute("http://api.openweathermap.org/data/2.5/weather?q="+27703+"&APPID=285d3b277a04868e1db63531a4832c78"); // this works!!!!!!!!!!
+
+        //getJSON("Durham");
     }
 
-    public void onClick(View view){
+    //TESTING
+    //https://stackoverflow.com/questions/34321728/using-openweathermap-api-key
+    public void getJSON(final String lat, final String lon) { //final String city   //final String postalCode
+
+        new AsyncTask<Void, Void, Void>() {
+
+            @Override
+            protected void onPreExecute() {
+                super.onPreExecute();
+            }
+
+            @Override
+            protected Void doInBackground(Void... params) {
+                try {
+                    URL url = new URL("http://api.openweathermap.org/data/2.5/weather?lat="+lat+"&lon="+lon+"&APPID=ea574594b9d36ab688642d5fbeab847e"); //my api 285d3b277a04868e1db63531a4832c78   //postalCode     //other api = ea574594b9d36ab688642d5fbeab847e
+                    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+
+                    StringBuffer json = new StringBuffer(1024);
+                    String tmp = "";
+
+                    while((tmp = reader.readLine()) != null)
+                        json.append(tmp).append("\n");
+                    reader.close();
+
+                    data = new JSONObject(json.toString());
+
+                    if(data.getInt("cod") != 200) {
+                        System.out.println("Cancelled");
+                        return null;
+                    }
+                } catch (Exception e) {
+                    System.out.println("Exception "+ e.getMessage());
+                    return null;
+                }
+                return null;
+            }
+
+
+
+            @Override  //THIS WORKS
+            protected void onPostExecute(Void Void) { //Void Void - THIS WORKS
+                //super.onPostExecute(data);
+                if(data!=null){ //THIS WORKS
+                    Log.d("my weather received",data.toString()); //THIS WORKS
+
+                    TextView mainTextView = findViewById(R.id.mainTextView);
+                    TextView descriptionTextView = findViewById(R.id.descriptionTextView);
+
+
+
+
+                    try{ //udemy code
+
+                        Log.d("WEATHER RECEIVED",data.toString()); // DOES THE CODE EVER ENTER THE TRY CATCH?!?!?!?!
+
+
+                        JSONObject jsonObject = new JSONObject(data.toString());
+
+                        String weatherInfo = jsonObject.getString("weather");
+                        Log.i("Weather content", weatherInfo); //udemy code
+
+                        JSONArray arr = new JSONArray(weatherInfo); //udemy code    //data.toString()
+                        for(int i=0;i<arr.length();i++){ //udemy code
+                            JSONObject jsonPart = arr.getJSONObject(i); //udemy code
+                            Log.i("main",jsonPart.getString("main")); //udemy code
+                            Log.i("description",jsonPart.getString("description")); //udemy code
+                            mainTextView.setText(jsonPart.getString("main"));
+                            descriptionTextView.setText(jsonPart.getString("description"));
+                        } //udemy code
+                    } catch(JSONException e){ //udemy code
+                        e.printStackTrace(); //udemy code
+                    }  //udemy code
+
+
+
+
+                } //THIS WORKS
+            } //THIS WORKS
+
+
+
+//            @Override //udemy code
+//            public void onPostExecute(String result){ //udemy code
+//                super.onPostExecute(result); //udemy code
+//                try{ //udemy code
+//                    JSONObject jsonObject = new JSONObject(result); //udemy code
+//                    String weatherInfo = jsonObject.getString("weather"); //udemy code
+//                    Log.i("Weather content", weatherInfo); //udemy code
+//                    JSONArray arr = new JSONArray(weatherInfo); //udemy code
+//                    for(int i=0;i<arr.length();i++){ //udemy code
+//                        JSONObject jsonPart = arr.getJSONObject(i); //udemy code
+//                        Log.i("main",jsonPart.getString("main")); //udemy code
+//                        Log.i("description",jsonPart.getString("description")); //udemy code
+//                    } //udemy code
+//                } catch(JSONException e){ //udemy code
+//                    e.printStackTrace(); //udemy code
+//                }  //udemy code
+//            } //udemy code
+
+
+
+        }.execute();
+    }
+
+
+    //END TESTING
+
+//    public class DownloadTask extends AsyncTask<String, Void, String>{
+//        @Override
+//        protected String doInBackground(String... urls) { // doInBackground method cannot interact with the UI at all
+//            String result = "";
+//            URL url;
+//            HttpURLConnection urlConnection = null;
+//            try {
+//                url = new URL(urls[0]); // can fail, needs try and catch
+//                urlConnection = (HttpURLConnection) url.openConnection(); //can fail, needs try and catch
+//                InputStream in = urlConnection.getInputStream();
+//                InputStreamReader reader = new InputStreamReader(in);
+//                int data = reader.read();
+//                while(data != -1){
+//                    char current = (char) data;
+//                    result += current;
+//                    data = reader.read();
+//                }
+//                return result;
+//            }catch(MalformedURLException e){
+//                e.printStackTrace();
+//            }catch(IOException e){
+//                e.printStackTrace();
+//            }
+//            return null;
+//        }
+//        @Override
+//        protected void onPostExecute(String result) { //can interact with UI
+//            super.onPostExecute(result);
+//            Log.i("Website content", result); // "Website content" is the identify of the log, and result is the actual result printed
+//        }
+//    }
+
+    public void onClick(View view) {
         //Toast.makeText(MapsActivity.this,"Button Pressed",Toast.LENGTH_SHORT).show();
-        Intent intent = new Intent(getApplicationContext(),MainActivity2.class);
+        Intent intent = new Intent(getApplicationContext(), MainActivity2.class);
         startActivity(intent);
     }
 
     //http://www.viralandroid.com/2016/04/google-maps-android-api-adding-search-bar-part-3.html
-    public void buttonClearFunction(View view){
+    public void buttonClearFunction(View view) {
         mMap.clear();
-        Toast.makeText(MapsActivity.this,"Map cleared of markers",Toast.LENGTH_SHORT).show();
+        //Toast.makeText(MapsActivity.this, "Map cleared of markers", Toast.LENGTH_SHORT).show();
     }
 
     public void centerCameraFunction(View view) {
@@ -122,24 +295,29 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1); //permission is not granted so ask for permission
         } else { //permission has been granted
             locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE); //declare locationManager
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,0,0,locationListener); //request location updates from location manager
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener); //request location updates from location manager
             Location newLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER); //get new location from location manager
             LatLng myLocation = new LatLng(newLocation.getLatitude(), newLocation.getLongitude()); //get lat long from new location
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myLocation, 18)); //move camera to zoom level 18/20
-            Toast.makeText(MapsActivity.this, "Map centered", Toast.LENGTH_SHORT).show(); //show toast
+            //Toast.makeText(MapsActivity.this, "Map centered", Toast.LENGTH_SHORT).show(); //show toast
+
+
+//            String latJSON = String.valueOf(newLocation.getLatitude());
+//            String lonJSON = String.valueOf(newLocation.getLongitude());
+//            getJSON(latJSON, lonJSON);
         }
     }
 
-    public void markLocation(View view){
+    public void markLocation(View view) {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1); //permission is not granted so ask for permission
         } else { //permission has been granted
             locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE); //declare locationManager
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,0,0,locationListener); //request location updates from location manager
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener); //request location updates from location manager
             Location newLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER); //get new location from location manager
             LatLng myLocation = new LatLng(newLocation.getLatitude(), newLocation.getLongitude()); //get lat long from new location
             mMap.addMarker(new MarkerOptions().position(myLocation).title("My Location").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)));
-            Toast.makeText(MapsActivity.this,"Location Marked",Toast.LENGTH_SHORT).show();
+            //Toast.makeText(MapsActivity.this, "Location Marked", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -154,6 +332,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      */
     @Override
     public void onMapReady(GoogleMap googleMap) {
+
         mMap = googleMap;
         mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID); //this may not be necessary
 
@@ -188,18 +367,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         };
 
-        if(Build.VERSION.SDK_INT < 23){
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,0,0,locationListener);
-        }else{
-            if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)!= PackageManager.PERMISSION_GRANTED){
-                ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION},1); //permission is not granted so ask for permission
-            }else{ //permission has been granted
-                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,0,0,locationListener);
+
+        if (Build.VERSION.SDK_INT < 23) {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+        } else {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1); //permission is not granted so ask for permission
+            } else { //permission has been granted
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
 
                 //app is launched AND we can get the users location
                 Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
-                if(lastKnownLocation!=null){ //this calls to the updateLocationInfo function and updates TextViews
+                if (lastKnownLocation != null) { //this calls to the updateLocationInfo function and updates TextViews
                     updateLocationInfo(lastKnownLocation);
                 }
 
@@ -207,8 +387,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 //mMap.clear();
                 //mMap.addMarker(new MarkerOptions().position(myLocation).title("My Location").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)));
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myLocation,18));
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myLocation, 18));
+
+//                String latJSON = String.valueOf(lastKnownLocation.getLatitude());
+//                String lonJSON = String.valueOf(lastKnownLocation.getLongitude());
+//                getJSON(latJSON, lonJSON);
             }
         }
+
     }
 }
+
