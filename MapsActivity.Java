@@ -11,13 +11,19 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -40,15 +46,19 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback { // extends FragmentActivity  AppCompatActivity
 
     public GoogleMap mMap; //maybe make this public?
 
     public JSONObject data = null;
 
+
+    public String address = "";
 
     public double latJSON;
     public double lonJSON;
@@ -67,18 +77,35 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
                 }
             }
-//        } else{//see if this works
-//            Toast.makeText(MapsActivity.this,"Button Pressed",Toast.LENGTH_SHORT).show();//see if this works
-//        }//see if this works
-        }
+        } else{//see if this works
+            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            startActivity(intent);
+        }//see if this works
     }
+
+
+
+//https://stackoverflow.com/questions/41844194/gps-setting-issue-in-android-studio
+//https://stackoverflow.com/questions/12044552/android-activate-gps-with-alertdialog-how-to-wait-for-the-user-to-take-action
+//    public void isGPSEnable(){
+//        LocationManager service = (LocationManager) getSystemService(LOCATION_SERVICE);
+//        boolean enabled = service
+//                .isProviderEnabled(LocationManager.GPS_PROVIDER);
+//        if (!enabled) {
+//            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+//            startActivity(intent);
+//        }
+//    }
+
+
+
 
     public void updateLocationInfo(Location location) { //this is all new and has to do with updating the TextViews
 
-        TextView latitudeTextView = findViewById(R.id.latitudeTextView);
-        TextView longitudeTextView = findViewById(R.id.longitudeTextView);
-        TextView altitudeTextView = findViewById(R.id.altitudeTextView);
-        TextView accuracyTextView = findViewById(R.id.accuracyTextView);
+        TextView latitudeTextView = (TextView) findViewById(R.id.latitudeTextView);
+        TextView longitudeTextView = (TextView) findViewById(R.id.longitudeTextView);
+        TextView altitudeTextView = (TextView) findViewById(R.id.altitudeTextView);
+        TextView accuracyTextView = (TextView) findViewById(R.id.accuracyTextView);
 
         latitudeTextView.setText("Latitude: " + location.getLatitude());
         longitudeTextView.setText("Longitude: " + location.getLongitude());
@@ -120,8 +147,31 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+    public boolean onCreateOptionsMenu(Menu menu){
+        MenuInflater menuInflater = getMenuInflater();
+        menuInflater.inflate(R.menu.main_menu,menu);
+
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    public boolean onOptionsItemSelected(MenuItem item){
+        super.onOptionsItemSelected(item);
+
+        switch(item.getItemId()){
+            case R.id.settings:
+                Log.i("Menu item selected", "Settings");
+            case R.id.help:
+                Log.i("Menu item selected", "Help");
+                return true;
+            default:
+                return false;
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {  //Location location
+        //this.requestWindowFeature(Window.FEATURE_NO_TITLE); //to try and add the title for settings
+        setTitle("Alex Ko's Location App");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -184,8 +234,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 if(data!=null){ //THIS WORKS
                     Log.d("my weather received",data.toString()); //THIS WORKS
 
-                    TextView mainTextView = findViewById(R.id.mainTextView);
-                    TextView descriptionTextView = findViewById(R.id.descriptionTextView);
+                    TextView mainTextView = (TextView) findViewById(R.id.mainTextView);
+                    TextView descriptionTextView = (TextView) findViewById(R.id.descriptionTextView);
 
 
 
@@ -211,10 +261,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     } catch(JSONException e){ //udemy code
                         e.printStackTrace(); //udemy code
                     }  //udemy code
-
-
-
-
                 } //THIS WORKS
             } //THIS WORKS
 
@@ -318,6 +364,43 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             LatLng myLocation = new LatLng(newLocation.getLatitude(), newLocation.getLongitude()); //get lat long from new location
             mMap.addMarker(new MarkerOptions().position(myLocation).title("My Location").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)));
             //Toast.makeText(MapsActivity.this, "Location Marked", Toast.LENGTH_SHORT).show();
+
+
+
+
+
+
+//            https://stackoverflow.com/questions/42890570/android-get-location-in-button-click
+//            Geocoder geocoder = new Geocoder(getApplicationContext(), Locale.getDefault());
+//            String address = "";
+//            LatLng latLng = (LatLng) new latLng;
+//
+//            try {
+//                List<Address> listAddresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
+//                if(listAddresses!=null && listAddresses.size()>0){
+//                    if(listAddresses.get(0).getThoroughfare()!=null){
+//                        if(listAddresses.get(0).getSubThoroughfare()!=null){
+//                            address+=listAddresses.get(0).getSubThoroughfare() + " ";
+//                        }
+//                        address+=listAddresses.get(0).getThoroughfare();
+//                    }
+//                }
+//            } catch(IOException e){
+//                e.printStackTrace();
+//            }
+//
+//            if(address==""){
+//                SimpleDateFormat sdf = new SimpleDateFormat("mm:HH yyyyMMdd");
+//                address = sdf.format(new Date());
+//            }
+//
+//            mMap.addMarker(new MarkerOptions().position(myLocation).title(address).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)));
+
+
+
+
+
+
         }
     }
 
@@ -373,6 +456,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         } else {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1); //permission is not granted so ask for permission
+                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS); //testing 8/20/2017
+                startActivity(intent); //testing 8/20/2017
             } else { //permission has been granted
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
 
