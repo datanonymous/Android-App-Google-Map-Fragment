@@ -1,7 +1,7 @@
 # Android-Apps
 Java code and xml files for the android app projects I make in my free time!
 
-Added a title and toolbar!
+Added a title and toolbar! 
 ![capture](https://user-images.githubusercontent.com/26337504/30189449-de5be32c-9401-11e7-98be-b6e4a1474f39.JPG)
 
 I added a weather feature using JSON from https://openweathermap.org/current
