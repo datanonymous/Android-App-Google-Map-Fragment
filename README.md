@@ -1,6 +1,9 @@
 # Android-Apps
 Java code and xml files for the android app projects I make in my free time!
 
+Moved notes and currency to the tool bar!  You can create new notes as well as long press to delete them!
+![app 9 24 2017](https://user-images.githubusercontent.com/26337504/30779736-b3babfea-a0c6-11e7-9c49-6756c78c95e9.png)
+
 I added a title bar and tool bar for settings!
 
 ![capture](https://user-images.githubusercontent.com/26337504/30189545-9a8abd02-9402-11e7-8b2d-01af146675cd.JPG)
