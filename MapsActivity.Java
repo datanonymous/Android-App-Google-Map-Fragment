@@ -24,6 +24,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -47,6 +48,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -58,13 +60,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public JSONObject data = null;
 
 
-    public String address = "";
-
-    public double latJSON;
-    public double lonJSON;
+//    public String address = "";
+//
+//    public double latJSON;
+//    public double lonJSON;
 
     LocationManager locationManager;
     LocationListener locationListener;
+
+
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -147,26 +152,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    public boolean onCreateOptionsMenu(Menu menu){
-        MenuInflater menuInflater = getMenuInflater();
-        menuInflater.inflate(R.menu.main_menu,menu);
 
-        return super.onCreateOptionsMenu(menu);
-    }
 
-    public boolean onOptionsItemSelected(MenuItem item){
-        super.onOptionsItemSelected(item);
-
-        switch(item.getItemId()){
-            case R.id.settings:
-                Log.i("Menu item selected", "Settings");
-            case R.id.help:
-                Log.i("Menu item selected", "Help");
-                return true;
-            default:
-                return false;
-        }
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {  //Location location
@@ -187,6 +174,54 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         //getJSON("Durham");
     }
+
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu){
+        MenuInflater menuInflater = getMenuInflater();
+        menuInflater.inflate(R.menu.main_menu,menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+//    public boolean onOptionsItemSelected(MenuItem item){
+//        super.onOptionsItemSelected(item);
+//
+//        switch(item.getItemId()){
+//            case R.id.notes:
+//                //Log.i("Menu item selected", "Notes");
+//                Intent intentNotes = new Intent(getApplicationContext(), NoteActivity.class);
+//                startActivity(intentNotes);
+//            case R.id.money:
+//                //Log.i("Menu item selected", "Help");
+//                Intent intentMoney = new Intent(getApplicationContext(), MainActivity2.class);
+//                startActivity(intentMoney);
+//                //return true;
+//            default:
+//                return false;
+//        }
+//    }
+
+
+    // test this to see if it works... previous iteration used switch and case, but clicking on notes tab would bring user to money tab first then notes
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        if(item.getItemId() == R.id.notes){
+            Intent intentNotes = new Intent(getApplicationContext(), NoteActivity.class);
+            startActivity(intentNotes);
+        }
+
+        if(item.getItemId() == R.id.money){
+            Intent intentMoney = new Intent(getApplicationContext(), MainActivity2.class);
+            startActivity(intentMoney);
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+
+
 
     //TESTING
     //https://stackoverflow.com/questions/34321728/using-openweathermap-api-key
@@ -284,8 +319,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 //                }  //udemy code
 //            } //udemy code
 
-
-
         }.execute();
     }
 
@@ -324,11 +357,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 //        }
 //    }
 
-    public void onClick(View view) {
-        //Toast.makeText(MapsActivity.this,"Button Pressed",Toast.LENGTH_SHORT).show();
-        Intent intent = new Intent(getApplicationContext(), MainActivity2.class);
-        startActivity(intent);
-    }
+//    //old button for switching to money screen (before I learned how to make menus!)
+//    public void onClick(View view) {
+//        //Toast.makeText(MapsActivity.this,"Button Pressed",Toast.LENGTH_SHORT).show();
+//        Intent intent = new Intent(getApplicationContext(), MainActivity2.class);
+//        startActivity(intent);
+//    }
 
     //http://www.viralandroid.com/2016/04/google-maps-android-api-adding-search-bar-part-3.html
     public void buttonClearFunction(View view) {
@@ -346,7 +380,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             LatLng myLocation = new LatLng(newLocation.getLatitude(), newLocation.getLongitude()); //get lat long from new location
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myLocation, 18)); //move camera to zoom level 18/20
             //Toast.makeText(MapsActivity.this, "Map centered", Toast.LENGTH_SHORT).show(); //show toast
-
 
 //            String latJSON = String.valueOf(newLocation.getLatitude());
 //            String lonJSON = String.valueOf(newLocation.getLongitude());
@@ -395,11 +428,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 //            }
 //
 //            mMap.addMarker(new MarkerOptions().position(myLocation).title(address).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)));
-
-
-
-
-
 
         }
     }
