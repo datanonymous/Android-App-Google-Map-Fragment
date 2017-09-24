@@ -12,11 +12,11 @@ import static com.example.alex.javagooglemapapplication.R.id.yenDollarsTextView;
 
 public class MainActivity2 extends AppCompatActivity {
 
-    public void buttonPressed(View view){
-        //Toast.makeText(MapsActivity.this,"Button Pressed",Toast.LENGTH_SHORT).show();
-        Intent intent = new Intent(getApplicationContext(),MapsActivity.class);
-        startActivity(intent);
-    }
+//    public void buttonPressed(View view){
+//        //Toast.makeText(MapsActivity.this,"Button Pressed",Toast.LENGTH_SHORT).show();
+//        Intent intent = new Intent(getApplicationContext(),MapsActivity.class);
+//        startActivity(intent);
+//    }
 
     public void convertFunction(View view){
         EditText yenEditText = (EditText) findViewById(R.id.yenEditText);
