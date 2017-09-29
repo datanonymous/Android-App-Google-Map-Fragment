@@ -53,7 +53,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback { // extends FragmentActivity  AppCompatActivity
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnMapClickListener, GoogleMap.OnMapLongClickListener { // extends FragmentActivity  AppCompatActivity
 
     public GoogleMap mMap; //maybe make this public?
 
@@ -153,6 +153,32 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
+    //testing 9/29/2017
+    @Override
+    public void onMapLongClick(LatLng latLng){
+        Geocoder geocoder = new Geocoder(getApplicationContext(), Locale.getDefault());
+        String address = "";
+        try{
+            List<Address> listAddresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
+            if(listAddresses != null && listAddresses.size() > 0){
+                if(listAddresses.get(0).getThoroughfare() != null){
+                    if(listAddresses.get(0).getSubThoroughfare() != null){
+                        address += listAddresses.get(0).getSubThoroughfare() + " ";
+                    }
+                    address += listAddresses.get(0).getThoroughfare();
+                }
+            }
+        }catch(IOException e){
+            e.printStackTrace();
+        }
+
+        if(address == ""){
+            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm [MM/dd/yyyy]");
+            address = sdf.format(new Date());
+        }
+
+        mMap.addMarker(new MarkerOptions().position(latLng).title(address).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
+    }
 
 
     @Override
@@ -395,7 +421,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener); //request location updates from location manager
             Location newLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER); //get new location from location manager
             LatLng myLocation = new LatLng(newLocation.getLatitude(), newLocation.getLongitude()); //get lat long from new location
-            mMap.addMarker(new MarkerOptions().position(myLocation).title("My Location").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)));
+
+            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm [MM/dd/yyyy]"); //try to add location information 9/29/2017
+            String currentDateandTime = sdf.format(new Date());
+
+            mMap.addMarker(new MarkerOptions().position(myLocation).title(currentDateandTime).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW)));
             //Toast.makeText(MapsActivity.this, "Location Marked", Toast.LENGTH_SHORT).show();
 
 
@@ -445,6 +475,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onMapReady(GoogleMap googleMap) {
 
         mMap = googleMap;
+        mMap.setOnMapLongClickListener(this);
         mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID); //this may not be necessary
 
         locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
@@ -453,7 +484,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             @Override
             public void onLocationChanged(Location location) {
-                LatLng myLocation = new LatLng(location.getLatitude(), location.getLongitude());
+                //LatLng myLocation = new LatLng(location.getLatitude(), location.getLongitude());
 
                 updateLocationInfo(location);
 
@@ -507,6 +538,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 //                getJSON(latJSON, lonJSON);
             }
         }
+
+    }
+
+    @Override
+    public void onMapClick(LatLng latLng) {
 
     }
 }
