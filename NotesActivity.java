@@ -1,7 +1,9 @@
 package com.example.alex.javagooglemapapplication;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -15,6 +17,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import static android.R.attr.duration;
 import static com.example.alex.javagooglemapapplication.R.id.listView;
@@ -47,13 +50,22 @@ public class NoteActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        setTitle("Alex Ko's Location App");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_note);
 
         ListView listView = (ListView) findViewById(R.id.listView);
 
+        SharedPreferences sharedPreferences = getApplicationContext().getSharedPreferences("com.example.alex.javagooglemapapplication", Context.MODE_PRIVATE);
+        HashSet<String> set = (HashSet<String>) sharedPreferences.getStringSet("notes", null);
+        if(set==null){
+            notes.add("Example note");
+        } else{
+            notes = new ArrayList(set);
+        }
+
         //notes.add("Example note");
-        Toast.makeText(getApplicationContext(), "Use the menu to create a note and long press to delete", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(), "Use the menu to create a note and long press to delete", Toast.LENGTH_LONG).show();
 
         arrayAdapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, notes);
 
@@ -84,15 +96,17 @@ public class NoteActivity extends AppCompatActivity {
                                             public void onClick(DialogInterface dialogInterface, int i) {
                                                 notes.remove(itemToDelete);
                                                 arrayAdapter.notifyDataSetChanged();
+
+                                                SharedPreferences sharedPreferences = getApplicationContext().getSharedPreferences("com.example.alex.javagooglemapapplication", Context.MODE_PRIVATE);
+                                                HashSet<String> set = new HashSet(NoteActivity.notes);
+                                                sharedPreferences.edit().putStringSet("notes", set).apply();
                                             }
 
                                         }
-
                                 )
                                 .setNegativeButton("No", null)
                                 .show();
                 return true;
-
             }
 
         });
